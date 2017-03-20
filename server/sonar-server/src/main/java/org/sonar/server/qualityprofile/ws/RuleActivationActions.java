@@ -30,6 +30,7 @@ import org.sonar.core.util.Uuids;
 import org.sonar.db.qualityprofile.ActiveRuleKey;
 import org.sonar.server.qualityprofile.QProfileService;
 import org.sonar.server.qualityprofile.RuleActivation;
+import org.sonar.server.qualityprofile.RuleActivator;
 
 @ServerSide
 public class RuleActivationActions implements QProfileWsActionDefinition {
@@ -44,9 +45,11 @@ public class RuleActivationActions implements QProfileWsActionDefinition {
   public static final String DEACTIVATE_ACTION = "deactivate_rule";
 
   private final QProfileService service;
+  private RuleActivator ruleActivator;
 
-  public RuleActivationActions(QProfileService service) {
+  public RuleActivationActions(QProfileService service, RuleActivator ruleActivator) {
     this.service = service;
+    this.ruleActivator = ruleActivator;
   }
 
   public void define(WebService.NewController controller) {
@@ -114,7 +117,8 @@ public class RuleActivationActions implements QProfileWsActionDefinition {
 
   private void deactivate(Request request, Response response) {
     RuleKey ruleKey = readRuleKey(request);
-    service.deactivate(ActiveRuleKey.of(request.mandatoryParam(PROFILE_KEY), ruleKey));
+    service.verifyAdminPermission();
+    ruleActivator.deactivate(ActiveRuleKey.of(request.mandatoryParam(PROFILE_KEY), ruleKey));
   }
 
   private static RuleKey readRuleKey(Request request) {

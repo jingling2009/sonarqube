@@ -323,7 +323,7 @@ public class RuleActivator {
    * Deactivate a rule on a Quality profile. Does nothing if the rule is not activated, but
    * fails (fast) if the rule or the profile does not exist.
    */
-  List<ActiveRuleChange> deactivate(ActiveRuleKey key) {
+  public List<ActiveRuleChange> deactivate(ActiveRuleKey key) {
     DbSession dbSession = db.openSession(false);
     try {
       List<ActiveRuleChange> changes = deactivate(dbSession, key);
