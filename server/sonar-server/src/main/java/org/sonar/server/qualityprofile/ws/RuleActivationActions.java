@@ -32,7 +32,7 @@ import org.sonar.server.qualityprofile.QProfileService;
 import org.sonar.server.qualityprofile.RuleActivation;
 
 @ServerSide
-public class RuleActivationActions {
+public class RuleActivationActions implements QProfileWsActionDefinition {
 
   public static final String PROFILE_KEY = "profile_key";
   public static final String RULE_KEY = "rule_key";
@@ -49,7 +49,7 @@ public class RuleActivationActions {
     this.service = service;
   }
 
-  void define(WebService.NewController controller) {
+  public void define(WebService.NewController controller) {
     defineActivateAction(controller);
     defineDeactivateAction(controller);
   }

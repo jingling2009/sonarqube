@@ -33,7 +33,7 @@ import org.sonar.server.rule.ws.RuleQueryFactory;
 import static org.sonar.server.rule.ws.SearchAction.defineRuleSearchParameters;
 
 @ServerSide
-public class BulkRuleActivationActions {
+public class BulkRuleActivationActions implements QProfileWsActionDefinition {
 
   public static final String PROFILE_KEY = "profile_key";
   public static final String SEVERITY = "activation_severity";
@@ -49,7 +49,7 @@ public class BulkRuleActivationActions {
     this.ruleQueryFactory = ruleQueryFactory;
   }
 
-  void define(WebService.NewController controller) {
+  public void define(WebService.NewController controller) {
     defineActivateAction(controller);
     defineDeactivateAction(controller);
   }

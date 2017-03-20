@@ -19,12 +19,9 @@
  */
 package org.sonar.server.qualityprofile.ws;
 
-import org.sonar.server.ws.WsAction;
+import org.sonar.api.server.ws.Definable;
+import org.sonar.api.server.ws.WebService;
 
-/**
- * Marker interface for quality profile related web service end points
- */
-public interface QProfileWsAction extends WsAction, QProfileWsActionDefinition {
-
+public interface QProfileWsActionDefinition extends Definable<WebService.NewController> {
   // Marker interface
 }
