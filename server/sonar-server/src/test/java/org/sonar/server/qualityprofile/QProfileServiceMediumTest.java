@@ -69,6 +69,7 @@ public class QProfileServiceMediumTest {
   private ActiveRuleIndex activeRuleIndex;
   private RuleIndexer ruleIndexer;
   private ActiveRuleIndexer activeRuleIndexer;
+  private RuleActivator ruleActivator;
 
   private RuleDto xooRule1 = newXooX1().setSeverity("MINOR");
 
@@ -81,6 +82,7 @@ public class QProfileServiceMediumTest {
     ruleIndexer = tester.get(RuleIndexer.class);
     activeRuleIndexer = tester.get(ActiveRuleIndexer.class);
     activeRuleIndex = tester.get(ActiveRuleIndex.class);
+    ruleActivator = tester.get(RuleActivator.class);
 
     dbClient.ruleDao().insert(dbSession, xooRule1);
 
@@ -101,9 +103,10 @@ public class QProfileServiceMediumTest {
   @Test
   public void count_by_all_profiles() {
     logInAsQProfileAdministrator();
+    ruleActivator.activate(dbSession, new RuleActivation(RuleTesting.XOO_X1).setSeverity("BLOCKER"), XOO_P1_KEY);
+    ruleActivator.activate(dbSession, new RuleActivation(RuleTesting.XOO_X1).setSeverity("BLOCKER"), XOO_P2_KEY);
+    dbSession.commit();
 
-    service.activate(XOO_P1_KEY, new RuleActivation(RuleTesting.XOO_X1).setSeverity("BLOCKER"));
-    service.activate(XOO_P2_KEY, new RuleActivation(RuleTesting.XOO_X1).setSeverity("BLOCKER"));
     dbSession.clearCache();
     activeRuleIndexer.index();
 
@@ -121,16 +124,15 @@ public class QProfileServiceMediumTest {
     RuleDto xooRule3 = newXooX3().setStatus(RuleStatus.DEPRECATED);
     dbClient.ruleDao().insert(dbSession, xooRule2);
     dbClient.ruleDao().insert(dbSession, xooRule3);
-    dbSession.commit();
-    ruleIndexer.index();
 
     // active some rules
-    service.activate(XOO_P1_KEY, new RuleActivation(xooRule1.getKey()));
-    service.activate(XOO_P1_KEY, new RuleActivation(xooRule2.getKey()));
-    service.activate(XOO_P1_KEY, new RuleActivation(xooRule3.getKey()));
-    service.activate(XOO_P2_KEY, new RuleActivation(xooRule1.getKey()));
-    service.activate(XOO_P2_KEY, new RuleActivation(xooRule3.getKey()));
+    ruleActivator.activate(dbSession, new RuleActivation(xooRule1.getKey()), XOO_P1_KEY);
+    ruleActivator.activate(dbSession, new RuleActivation(xooRule2.getKey()), XOO_P1_KEY);
+    ruleActivator.activate(dbSession, new RuleActivation(xooRule3.getKey()), XOO_P1_KEY);
+    ruleActivator.activate(dbSession, new RuleActivation(xooRule1.getKey()), XOO_P2_KEY);
+    ruleActivator.activate(dbSession, new RuleActivation(xooRule3.getKey()), XOO_P2_KEY);
     dbSession.commit();
+    ruleIndexer.index();
 
     Map<String, Long> counts = activeRuleIndex.countAllDeprecatedByQualityProfileKey();
     assertThat(counts)

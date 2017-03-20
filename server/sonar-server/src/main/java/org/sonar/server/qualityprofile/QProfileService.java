@@ -19,11 +19,9 @@
  */
 package org.sonar.server.qualityprofile;
 
-import java.util.List;
 import javax.annotation.Nullable;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.DbClient;
-import org.sonar.db.DbSession;
 import org.sonar.server.organization.DefaultOrganizationProvider;
 import org.sonar.server.qualityprofile.index.ActiveRuleIndexer;
 import org.sonar.server.rule.index.RuleQuery;
@@ -47,20 +45,6 @@ public class QProfileService {
     this.ruleActivator = ruleActivator;
     this.userSession = userSession;
     this.defaultOrganizationProvider = defaultOrganizationProvider;
-  }
-
-  /**
-   * Activate a rule on a Quality profile. Update configuration (severity/parameters) if the rule is already
-   * activated.
-   */
-  public List<ActiveRuleChange> activate(String profileKey, RuleActivation activation) {
-    verifyAdminPermission();
-    try (DbSession dbSession = db.openSession(false)) {
-      List<ActiveRuleChange> changes = ruleActivator.activate(dbSession, activation, profileKey);
-      dbSession.commit();
-      activeRuleIndexer.index(changes);
-      return changes;
-    }
   }
 
   public BulkChangeResult bulkActivate(RuleQuery ruleQuery, String profile, @Nullable String severity) {

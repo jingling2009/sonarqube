@@ -61,7 +61,7 @@ public class QProfilesWsTest {
     ProfileImporter[] importers = createImporters(languages);
 
     controller = new WsTester(new QProfilesWs(
-      new RuleActivationActions(profileService, null),
+      new RuleActivationActions(profileService, null, null, null),
       new BulkRuleActivationActions(profileService, null),
       new CreateAction(null, null, null, languages, wsSupport, userSessionRule, null, importers),
       new ImportersAction(importers),

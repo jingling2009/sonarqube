@@ -209,8 +209,9 @@ public class InheritanceActionTest {
     userSession.logIn()
       .addPermission(ADMINISTER_QUALITY_PROFILES, dbTester.getDefaultOrganization().getUuid());
 
-    service.activate(profile1.getKey(), new RuleActivation(rule.getKey()).setSeverity("MINOR"));
-    service.activate(profile2.getKey(), new RuleActivation(rule.getKey()).setSeverity("BLOCKER"));
+    ruleActivator.activate(dbSession, new RuleActivation(rule.getKey()).setSeverity("MINOR"), profile1.getKey());
+    ruleActivator.activate(dbSession, new RuleActivation(rule.getKey()).setSeverity("BLOCKER"), profile2.getKey());
+    dbSession.commit();
     activeRuleIndexer.index();
 
     userSession.logIn()

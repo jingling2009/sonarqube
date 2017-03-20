@@ -19,6 +19,7 @@
  */
 package org.sonar.server.qualityprofile.ws;
 
+import java.util.List;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.server.ServerSide;
@@ -27,10 +28,14 @@ import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.api.utils.KeyValueFormat;
 import org.sonar.core.util.Uuids;
+import org.sonar.db.DbClient;
+import org.sonar.db.DbSession;
 import org.sonar.db.qualityprofile.ActiveRuleKey;
+import org.sonar.server.qualityprofile.ActiveRuleChange;
 import org.sonar.server.qualityprofile.QProfileService;
 import org.sonar.server.qualityprofile.RuleActivation;
 import org.sonar.server.qualityprofile.RuleActivator;
+import org.sonar.server.qualityprofile.index.ActiveRuleIndexer;
 
 @ServerSide
 public class RuleActivationActions implements QProfileWsActionDefinition {
@@ -46,10 +51,14 @@ public class RuleActivationActions implements QProfileWsActionDefinition {
 
   private final QProfileService service;
   private RuleActivator ruleActivator;
+  private final DbClient dbClient;
+  private final ActiveRuleIndexer activeRuleIndexer;
 
-  public RuleActivationActions(QProfileService service, RuleActivator ruleActivator) {
+  public RuleActivationActions(QProfileService service, RuleActivator ruleActivator, DbClient dbClient, ActiveRuleIndexer activeRuleIndexer) {
     this.service = service;
     this.ruleActivator = ruleActivator;
+    this.dbClient = dbClient;
+    this.activeRuleIndexer = activeRuleIndexer;
   }
 
   public void define(WebService.NewController controller) {
@@ -112,7 +121,12 @@ public class RuleActivationActions implements QProfileWsActionDefinition {
       activation.setParameters(KeyValueFormat.parse(params));
     }
     activation.setReset(Boolean.TRUE.equals(request.paramAsBoolean(RESET)));
-    service.activate(request.mandatoryParam(PROFILE_KEY), activation);
+    service.verifyAdminPermission();
+    try (DbSession dbSession = dbClient.openSession(false)) {
+      List<ActiveRuleChange> changes = ruleActivator.activate(dbSession, activation, request.mandatoryParam(PROFILE_KEY));
+      dbSession.commit();
+      activeRuleIndexer.index(changes);
+    }
   }
 
   private void deactivate(Request request, Response response) {
