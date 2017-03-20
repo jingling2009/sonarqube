@@ -56,14 +56,11 @@ public class QProfileService {
    */
   public List<ActiveRuleChange> activate(String profileKey, RuleActivation activation) {
     verifyAdminPermission();
-    DbSession dbSession = db.openSession(false);
-    try {
+    try (DbSession dbSession = db.openSession(false)) {
       List<ActiveRuleChange> changes = ruleActivator.activate(dbSession, activation, profileKey);
       dbSession.commit();
       activeRuleIndexer.index(changes);
       return changes;
-    } finally {
-      dbSession.close();
     }
   }
 

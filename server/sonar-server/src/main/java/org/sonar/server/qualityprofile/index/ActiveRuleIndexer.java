@@ -63,16 +63,12 @@ public class ActiveRuleIndexer extends BaseIndexer {
   }
 
   private long doIndex(BulkIndexer bulk, long lastUpdatedAt) {
-    DbSession dbSession = dbClient.openSession(false);
     long maxDate;
-    try {
-      ActiveRuleResultSetIterator rowIt = ActiveRuleResultSetIterator.create(dbClient, dbSession, lastUpdatedAt);
+    try (DbSession dbSession = dbClient.openSession(false);
+      ActiveRuleResultSetIterator rowIt = ActiveRuleResultSetIterator.create(dbClient, dbSession, lastUpdatedAt)) {
       maxDate = doIndex(bulk, rowIt);
-      rowIt.close();
-      return maxDate;
-    } finally {
-      dbSession.close();
     }
+    return maxDate;
   }
 
   private static long doIndex(BulkIndexer bulk, Iterator<ActiveRuleDoc> activeRules) {
