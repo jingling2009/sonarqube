@@ -444,8 +444,7 @@ public class PropertiesDaoTest {
       .extracting("key", "resourceId").containsOnly(
         tuple(key, project.getId()),
         tuple(key, project2.getId()),
-        tuple(anotherKey, project2.getId())
-      );
+        tuple(anotherKey, project2.getId()));
 
     assertThat(underTest.selectPropertiesByComponentIds(session, newHashSet(123456789L))).isEmpty();
   }
@@ -482,6 +481,22 @@ public class PropertiesDaoTest {
     assertThat(underTest.selectPropertiesByKeysAndComponentIds(session, newHashSet("unknown"), newHashSet(project.getId()))).isEmpty();
     assertThat(underTest.selectPropertiesByKeysAndComponentIds(session, newHashSet("key"), newHashSet(123456789L))).isEmpty();
     assertThat(underTest.selectPropertiesByKeysAndComponentIds(session, newHashSet("unknown"), newHashSet(123456789L))).isEmpty();
+  }
+
+  @Test
+  public void select_global_properties_by_key_query() throws SQLException {
+    // global
+    insertProperty("one.property", "one", null, null);
+    insertProperty("two.property", "two", null, null);
+    // on component and user
+    insertProperty("one.property", "one", 10L, null);
+    insertProperty("two.property", "two", 10L, 100L);
+
+    assertThat(underTest.selectGlobalPropertiesByKeyQuery(dbTester.getSession(), "e.property")).extracting(PropertyDto::getKey, PropertyDto::getValue)
+      .containsOnly(tuple("one.property", "one"));
+    assertThat(underTest.selectGlobalPropertiesByKeyQuery(dbTester.getSession(), "property")).extracting(PropertyDto::getKey, PropertyDto::getValue)
+      .containsOnly(tuple("one.property", "one"), tuple("two.property", "two"));
+    assertThat(underTest.selectGlobalPropertiesByKeyQuery(dbTester.getSession(), "unknown")).isEmpty();
   }
 
   @Test
