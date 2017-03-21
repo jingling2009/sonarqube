@@ -19,33 +19,32 @@
  */
 // @flow
 import React from 'react';
-import ViewSelect from './ViewSelect';
+import RadioToggle from '../../../components/controls/RadioToggle';
 import { translate } from '../../../helpers/l10n';
 
-export default class PageHeader extends React.Component {
+export default class ViewSelect extends React.PureComponent {
   props: {
-    loading: boolean,
-    onViewChange: (string) => void,
-    total?: number,
+    onChange: (string) => void,
     view: string
   };
 
+  handleChange = (view: string) => {
+    this.props.onChange(view);
+  };
+
   render() {
+    const options = ['list', 'visualizations'].map(option => ({
+      value: option,
+      label: translate('projects.view', option)
+    }));
+
     return (
-      <header className="page-header">
-        <ViewSelect onChange={this.props.onViewChange} view={this.props.view} />
-
-        <div className="page-actions projects-page-actions">
-          {!!this.props.loading && <i className="spinner spacer-right" />}
-
-          {this.props.total != null &&
-            <span>
-              <strong id="projects-total">{this.props.total}</strong>
-              {' '}
-              {translate('projects._projects')}
-            </span>}
-        </div>
-      </header>
+      <RadioToggle
+        name="view"
+        onCheck={this.handleChange}
+        options={options}
+        value={this.props.view}
+      />
     );
   }
 }

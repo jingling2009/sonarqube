@@ -44,3 +44,13 @@ const save = (value: string) => {
 export const saveAll = () => save(LOCALSTORAGE_ALL);
 
 export const saveFavorite = () => save(LOCALSTORAGE_FAVORITE);
+
+// this list must contain only metric keys
+// because these keys are used to display visualization names
+export const VISUALIZATIONS = [
+  'bugs',
+  'vulnerabilities',
+  'code_smells',
+  'uncovered_lines',
+  'duplicated_blocks'
+];

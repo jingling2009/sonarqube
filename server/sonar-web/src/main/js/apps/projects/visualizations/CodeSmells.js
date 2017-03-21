@@ -19,33 +19,17 @@
  */
 // @flow
 import React from 'react';
-import ViewSelect from './ViewSelect';
-import { translate } from '../../../helpers/l10n';
+import SimpleBubbleChart from './SimpleBubbleChart';
 
-export default class PageHeader extends React.Component {
-  props: {
-    loading: boolean,
-    onViewChange: (string) => void,
-    total?: number,
-    view: string
-  };
-
+export default class CodeSmells extends React.Component {
   render() {
     return (
-      <header className="page-header">
-        <ViewSelect onChange={this.props.onViewChange} view={this.props.view} />
-
-        <div className="page-actions projects-page-actions">
-          {!!this.props.loading && <i className="spinner spacer-right" />}
-
-          {this.props.total != null &&
-            <span>
-              <strong id="projects-total">{this.props.total}</strong>
-              {' '}
-              {translate('projects._projects')}
-            </span>}
-        </div>
-      </header>
+      <SimpleBubbleChart
+        {...this.props}
+        xMetric={{ key: 'ncloc', type: 'SHORT_INT' }}
+        yMetric={{ key: 'sqale_index', type: 'SHORT_WORK_DUR' }}
+        sizeMetric={{ key: 'code_smells', type: 'SHORT_INT' }}
+      />
     );
   }
 }

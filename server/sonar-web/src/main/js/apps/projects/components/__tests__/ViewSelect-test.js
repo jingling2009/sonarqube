@@ -17,35 +17,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
 import React from 'react';
-import ViewSelect from './ViewSelect';
-import { translate } from '../../../helpers/l10n';
+import { shallow } from 'enzyme';
+import ViewSelect from '../ViewSelect';
 
-export default class PageHeader extends React.Component {
-  props: {
-    loading: boolean,
-    onViewChange: (string) => void,
-    total?: number,
-    view: string
-  };
-
-  render() {
-    return (
-      <header className="page-header">
-        <ViewSelect onChange={this.props.onViewChange} view={this.props.view} />
-
-        <div className="page-actions projects-page-actions">
-          {!!this.props.loading && <i className="spinner spacer-right" />}
-
-          {this.props.total != null &&
-            <span>
-              <strong id="projects-total">{this.props.total}</strong>
-              {' '}
-              {translate('projects._projects')}
-            </span>}
-        </div>
-      </header>
-    );
-  }
-}
+it('should render options', () => {
+  expect(shallow(<ViewSelect view="visualizations" />)).toMatchSnapshot();
+});

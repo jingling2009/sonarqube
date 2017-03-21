@@ -17,35 +17,26 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import ViewSelect from './ViewSelect';
-import { translate } from '../../../helpers/l10n';
+import { connect } from 'react-redux';
+import Visualizations from './Visualizations';
+import {
+  getProjects,
+  getComponent,
+  getComponentMeasures,
+  getOrganizationByKey
+} from '../../../store/rootReducer';
 
-export default class PageHeader extends React.Component {
-  props: {
-    loading: boolean,
-    onViewChange: (string) => void,
-    total?: number,
-    view: string
-  };
+const mapStateToProps = state => {
+  const projectKeys = getProjects(state) || [];
+  const projects = projectKeys.map(key => {
+    const component = getComponent(state, key);
+    return {
+      ...component,
+      measures: getComponentMeasures(state, key) || {},
+      organization: getOrganizationByKey(state, component.organization)
+    };
+  });
+  return { projects };
+};
 
-  render() {
-    return (
-      <header className="page-header">
-        <ViewSelect onChange={this.props.onViewChange} view={this.props.view} />
-
-        <div className="page-actions projects-page-actions">
-          {!!this.props.loading && <i className="spinner spacer-right" />}
-
-          {this.props.total != null &&
-            <span>
-              <strong id="projects-total">{this.props.total}</strong>
-              {' '}
-              {translate('projects._projects')}
-            </span>}
-        </div>
-      </header>
-    );
-  }
-}
+export default connect(mapStateToProps)(Visualizations);
