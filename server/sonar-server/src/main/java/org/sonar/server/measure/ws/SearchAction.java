@@ -34,7 +34,6 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.component.ComponentDto;
 import org.sonar.db.measure.MeasureDto;
-import org.sonar.db.measure.MeasureQuery;
 import org.sonar.db.metric.MetricDto;
 import org.sonar.server.user.UserSession;
 import org.sonarqube.ws.WsMeasures.Measure;
@@ -124,43 +123,38 @@ public class SearchAction implements MeasuresWsAction {
       return request;
     }
 
-    private List<MetricDto> searchMetrics() {
-      List<MetricDto> dbMetrics = dbClient.metricDao().selectByKeys(dbSession, request.getMetricKeys());
-      List<String> metricKeys = dbMetrics.stream().map(MetricDto::getKey).collect(toList());
-      checkRequest(request.getMetricKeys().size() == dbMetrics.size(), "The following metrics are not found: %s",
-        String.join(", ", difference(request.getMetricKeys(), metricKeys)));
-      return dbMetrics;
-    }
-
     private List<ComponentDto> searchProjects() {
       return getAuthorizedProjects(searchByProjectKeys(dbSession, request.getProjectKeys()));
-    }
-
-    private List<ComponentDto> getAuthorizedProjects(List<ComponentDto> projectDtos) {
-      if (userSession.isRoot()) {
-        // the method AuthorizationDao#keepAuthorizedProjectIds() should be replaced by
-        // a call to UserSession, which would transparently support roots.
-        // Meanwhile root is explicitly handled.
-        return projectDtos;
-      }
-      Map<String, Long> projectIdsByUuids = projectDtos.stream().collect(uniqueIndex(ComponentDto::uuid, ComponentDto::getId));
-      Set<Long> authorizedProjectIds = dbClient.authorizationDao().keepAuthorizedProjectIds(dbSession,
-        projectDtos.stream().map(ComponentDto::getId).collect(toList()),
-        userSession.getUserId(), UserRole.USER);
-      return projectDtos.stream()
-        .filter(c -> authorizedProjectIds.contains(projectIdsByUuids.get(c.projectUuid())))
-        .collect(Collectors.toList());
     }
 
     private List<ComponentDto> searchByProjectKeys(DbSession dbSession, List<String> projectKeys) {
       return dbClient.componentDao().selectByKeys(dbSession, projectKeys);
     }
 
-    private List<MeasureDto> searchMeasures() {
-      return dbClient.measureDao().selectByQuery(dbSession, MeasureQuery.builder()
-        .setProjectUuids(projects.stream().map(ComponentDto::uuid).collect(toList()))
-        .setMetricIds(metrics.stream().map(MetricDto::getId).collect(toList()))
-        .build());
+    private List<ComponentDto> getAuthorizedProjects(List<ComponentDto> componentDtos) {
+      if (userSession.isRoot()) {
+        // the method AuthorizationDao#keepAuthorizedProjectIds() should be replaced by
+        // a call to UserSession, which would transparently support roots.
+        // Meanwhile root is explicitly handled.
+        return componentDtos;
+      }
+      Set<String> projectUuids = componentDtos.stream().map(ComponentDto::projectUuid).collect(Collectors.toSet());
+      List<ComponentDto> projectDtos = dbClient.componentDao().selectByUuids(dbSession, projectUuids);
+      Map<String, Long> projectIdsByUuids = projectDtos.stream().collect(uniqueIndex(ComponentDto::uuid, ComponentDto::getId));
+      Set<Long> authorizedProjectIds = dbClient.authorizationDao().keepAuthorizedProjectIds(dbSession,
+        projectDtos.stream().map(ComponentDto::getId).collect(toList()),
+        userSession.getUserId(), UserRole.USER);
+      return componentDtos.stream()
+        .filter(component -> authorizedProjectIds.contains(projectIdsByUuids.get(component.projectUuid())))
+        .collect(Collectors.toList());
+    }
+
+    private List<MetricDto> searchMetrics() {
+      List<MetricDto> dbMetrics = dbClient.metricDao().selectByKeys(dbSession, request.getMetricKeys());
+      List<String> metricKeys = dbMetrics.stream().map(MetricDto::getKey).collect(toList());
+      checkRequest(request.getMetricKeys().size() == dbMetrics.size(), "The following metrics are not found: %s",
+        String.join(", ", difference(request.getMetricKeys(), metricKeys)));
+      return dbMetrics;
     }
 
     private List<String> difference(Collection<String> expected, Collection<String> actual) {
@@ -170,6 +164,10 @@ public class SearchAction implements MeasuresWsAction {
         .filter(value -> !actualSet.contains(value))
         .sorted(String::compareTo)
         .collect(toList());
+    }
+
+    private List<MeasureDto> searchMeasures() {
+      return dbClient.measureDao().selectByComponentsAndMetrics(dbSession, projects, metrics.stream().map(MetricDto::getId).collect(toList()));
     }
 
     private SearchWsResponse buildResponse() {

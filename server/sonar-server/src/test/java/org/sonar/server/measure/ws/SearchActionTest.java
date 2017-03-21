@@ -59,6 +59,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.sonar.api.utils.DateUtils.parseDateTime;
 import static org.sonar.db.component.ComponentTesting.newProjectDto;
+import static org.sonar.db.component.ComponentTesting.newSubView;
+import static org.sonar.db.component.ComponentTesting.newView;
 import static org.sonar.db.component.SnapshotTesting.newAnalysis;
 import static org.sonar.db.measure.MeasureTesting.newMeasureDto;
 import static org.sonar.db.metric.MetricTesting.newMetricDto;
@@ -170,6 +172,43 @@ public class SearchActionTest {
       .containsExactly(
         tuple("complexity", project2.key()), tuple("complexity", project3.key()), tuple("complexity", project1.key()),
         tuple("coverage", project2.key()), tuple("coverage", project3.key()), tuple("coverage", project1.key()));
+  }
+
+  @Test
+  public void return_measures_on_view() throws Exception {
+    ComponentDto view = newView(db.getDefaultOrganization());
+    SnapshotDto viewSnapshot = db.components().insertProjectAndSnapshot(view);
+    setBrowsePermissionOnUser(view);
+    MetricDto coverage = insertCoverageMetric();
+    dbClient.measureDao().insert(dbSession, newMeasureDto(coverage, view, viewSnapshot).setValue(15.5d));
+    db.commit();
+
+    SearchWsResponse result = call(singletonList(view.key()), singletonList("coverage"));
+
+    List<Measure> measures = result.getMeasuresList();
+    assertThat(measures).hasSize(1);
+    Measure measure = measures.get(0);
+    assertThat(measure.getMetric()).isEqualTo("coverage");
+    assertThat(measure.getValue()).isEqualTo("15.5");
+  }
+
+  @Test
+  public void return_measures_on_sub_view() throws Exception {
+    ComponentDto view = newView(db.getDefaultOrganization());
+    SnapshotDto viewSnapshot = db.components().insertProjectAndSnapshot(view);
+    ComponentDto subView = db.components().insertComponent(newSubView(view));
+    setBrowsePermissionOnUser(view);
+    MetricDto coverage = insertCoverageMetric();
+    dbClient.measureDao().insert(dbSession, newMeasureDto(coverage, subView, viewSnapshot).setValue(15.5d));
+    db.commit();
+
+    SearchWsResponse result = call(singletonList(subView.key()), singletonList("coverage"));
+
+    List<Measure> measures = result.getMeasuresList();
+    assertThat(measures).hasSize(1);
+    Measure measure = measures.get(0);
+    assertThat(measure.getMetric()).isEqualTo("coverage");
+    assertThat(measure.getValue()).isEqualTo("15.5");
   }
 
   @Test
