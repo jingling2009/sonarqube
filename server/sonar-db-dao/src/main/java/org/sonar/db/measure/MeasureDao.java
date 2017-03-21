@@ -28,7 +28,10 @@ import org.sonar.db.Dao;
 import org.sonar.db.DbSession;
 import org.sonar.db.component.ComponentDto;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
+import static org.sonar.core.util.stream.Collectors.toList;
+import static org.sonar.db.DatabaseUtils.PARTITION_SIZE_FOR_ORACLE;
 import static org.sonar.db.DatabaseUtils.executeLargeInputs;
 
 public class MeasureDao implements Dao {
@@ -113,6 +116,14 @@ public class MeasureDao implements Dao {
     return executeLargeInputs(
       metricIds,
       ids -> mapper(dbSession).selectProjectMeasuresOfDeveloper(developerId, metricIds));
+  }
+
+  public List<MeasureDto> selectByComponentsAndMetrics(DbSession dbSession, List<ComponentDto> componentDtos, List<Integer> metricIds) {
+    checkState(componentDtos.size() < PARTITION_SIZE_FOR_ORACLE, "Max number of components allowed is %s", PARTITION_SIZE_FOR_ORACLE);
+    return mapper(dbSession).selectByComponentsAndProjectsAndMetrics(
+      componentDtos.stream().map(ComponentDto::uuid).collect(toList()),
+      componentDtos.stream().map(ComponentDto::projectUuid).collect(toList()),
+      metricIds);
   }
 
   public void insert(DbSession session, MeasureDto measureDto) {

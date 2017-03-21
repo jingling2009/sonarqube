@@ -40,5 +40,8 @@ public interface MeasureMapper {
 
   List<MeasureDto> selectProjectMeasuresOfDeveloper(@Param("developerId") long developerId, @Param("metricIds") Collection<Integer> metricIds);
 
+  List<MeasureDto> selectByComponentsAndProjectsAndMetrics(@Param("componentUuids") List<String> componentUuids, @Param("projectUuids") List<String> projectUuids,
+    @Param("metricIds") Collection<Integer> metricIds);
+
   void insert(MeasureDto measureDto);
 }
